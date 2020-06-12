@@ -1,0 +1,15 @@
+{
+	"name": "wdgdc/wdg-wp-support-monitor",
+	"description": "A package to monitor WordPress status",
+	"type": "library",
+	"license": "MIT",
+	"require": {},
+	"autoload": {
+		"files": [
+			"src/index.php"
+		],
+		"psr-4": {
+			"WDGDC\\SupportMonitor\\": "src/"
+		}
+	}
+}
