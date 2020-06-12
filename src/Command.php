@@ -10,9 +10,41 @@ if ( class_exists( 'WP_CLI_Command' ) ) :
 
 		/**
 		 * Execute the support status and post to the configured endpoint
+		 *
+		 * ## OPTIONS
+		 *
+		 * [--format=<format>]
+		 * : Render the data in the specified format
+		 * ---
+		 * default: yaml
+		 * options:
+		 *   - yaml
+		 *   - json
+		 *   - table
+		 *
+		 * [--pretty]
+		 * : Pretty print the JSON report
+		 * ---
+		 * default: true
+		 * options:
+		 *   - true
+		 *   - false
 		 */
-		public function update() {
-			Monitor::get_instance()->post( true ); // Blocking request
+		public function update( $args, $assoc_args ) {
+			$response = Monitor::get_instance()->post( true ); // Blocking request
+
+			if ( is_wp_error( $response ) ) {
+				\WP_CLI::error( $response->get_error_message() );
+				exit;
+			}
+
+			$response->status  = $response->request['response']['code'];
+			$response->message = $response->request['response']['message'];
+			$response->body    = $response->request['body'];
+
+			unset( $response->request );
+
+			$this->format_items( $response, $assoc_args );
 		}
 
 		/**
@@ -70,6 +102,18 @@ if ( class_exists( 'WP_CLI_Command' ) ) :
 		public function report( $args, $assoc_args ) {
 			$data = Monitor::get_instance()->compile();
 
+			$this->format_items( $data, $assoc_args );
+		}
+
+		/**
+		 * Format the output
+		 *
+		 * @param array $assoc_arts - contains the format and pretty keys
+		 * @param object $data
+		 * @return void
+		 * @access protected
+		 */
+		protected function format_items( $data, $assoc_args = [ 'format' => 'json', 'pretty' => true ] ) {
 			switch( $assoc_args['format'] ) {
 				case 'json':
 					\WP_CLI::line( json_encode( $data, ! empty( $assoc_args['pretty'] ) ? JSON_PRETTY_PRINT : 0 ) );
@@ -100,7 +144,7 @@ if ( class_exists( 'WP_CLI_Command' ) ) :
 					}
 				break;
 				default: // yaml
-					\WP_CLI\Utils\format_items( $assoc_args['format'], [ $data ], array_keys( (array) current( $data ) ) );
+					\WP_CLI\Utils\format_items( $assoc_args['format'], [ $data ], array_keys( (array) $data ) );
 				break;
 			}
 		}

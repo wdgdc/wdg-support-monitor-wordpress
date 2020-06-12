@@ -13,6 +13,7 @@ final class Monitor {
 	/**
 	 * Name of our cron event
 	 *
+	 * @var string
 	 * @access public
 	 */
 	const EVENT = 'wdg_support_monitor';
@@ -20,6 +21,7 @@ final class Monitor {
 	/**
 	 * Name of our last run setting
 	 *
+	 * @var string
 	 * @access public
 	 */
 	const LAST_RUN_KEY = 'wdg_support_monitor_last_run';
@@ -27,14 +29,18 @@ final class Monitor {
 	/**
 	 * Singleton holder
 	 *
+	 * @var \WDGDC\SupportMonitor\Monitor
 	 * @access private
+	 * @static
 	 */
 	private static $_instance;
 
 	/**
 	 * singleton method for plugin, don't need more than one of these
 	 *
+	 * @return \WDGDC\SupportMonitor\Monitor
 	 * @access public
+	 * @static
 	 */
 	 public static function get_instance() {
 		if ( ! isset( self::$_instance ) ) {
@@ -47,20 +53,23 @@ final class Monitor {
 	/**
 	 * The url domain our monitor should post to
 	 *
+	 * @var string
 	 * @access private
 	 */
-	private $post_url = 'http://localhost';
+	private $api_endpoint = 'http://localhost';
 
 	/**
 	 * The key that is generated from the supmon tool
 	 *
+	 * @var string
 	 * @access private
 	 */
-	private $secret_key;
+	private $api_secret;
 
 	/**
-	 * The last time our cron was executed
+	 * The last time our cron was executed - saved to the options table
 	 *
+	 * @var \StdClass
 	 * @access private
 	 */
 	private $last_run;
@@ -73,21 +82,21 @@ final class Monitor {
 	 */
 	private function __construct() {
 		// define the secret key in the config file or hash the server name to enter in the supmon backend
-		if ( defined( 'WDG_SUPPORT_MONITOR_SECRET_KEY' ) && ! empty( WDG_SUPPORT_MONITOR_SECRET_KEY ) ) {
-			$this->secret_key = WDG_SUPPORT_MONITOR_SECRET_KEY;
+		if ( defined( 'WDG_SUPPORT_MONITOR_API_SECRET' ) && ! empty( WDG_SUPPORT_MONITOR_API_SECRET ) ) {
+			$this->api_secret = WDG_SUPPORT_MONITOR_API_SECRET;
 		} else {
-			$this->secret_key = hash( 'sha256', php_uname( 'n' ) );
+			$this->api_secret = hash( 'sha256', php_uname( 'n' ) );
 		}
 
 		// allow the domain to be set in wp-config.php for testing
-		if ( defined( 'WDG_SUPPORT_MONITOR_POST_URL' ) && ! empty( WDG_SUPPORT_MONITOR_POST_URL ) && is_string( WDG_SUPPORT_MONITOR_POST_URL ) ) {
-			$this->post_url = untrailingslashit( WDG_SUPPORT_MONITOR_POST_URL );
+		if ( defined( 'WDG_SUPPORT_MONITOR_API_ENDPOINT' ) && ! empty( WDG_SUPPORT_MONITOR_API_ENDPOINT ) && is_string( WDG_SUPPORT_MONITOR_API_ENDPOINT ) ) {
+			$this->api_endpoint = untrailingslashit( WDG_SUPPORT_MONITOR_API_ENDPOINT );
 		}
 
 		// run again if we don't know the last time it ran, or was over 12 hours ago (cron is probably disabled or having issues)
 		$this->last_run = get_option( self::LAST_RUN_KEY );
 
-		if ( empty( $this->last_run ) || empty( $this->last_run->timestamp ) || ( current_time('timestamp') - strtotime( $this->last_run->timestamp ) > 12 * HOUR_IN_SECONDS  ) ) {
+		if ( empty( $this->last_run ) || empty( $this->last_run->success ) || empty( $this->last_run->timestamp ) || ( current_time('timestamp') - strtotime( $this->last_run->timestamp ) > 12 * HOUR_IN_SECONDS ) ) {
 			add_action( 'shutdown', [ $this, 'post' ] );
 		}
 
@@ -100,6 +109,11 @@ final class Monitor {
 		register_uninstall_hook( __FILE__, [ __CLASS__, 'uninstall_hook' ] );
 	}
 
+	/**
+	 * Get the last run of the monitor
+	 *
+	 * @return \StdClass
+	 */
 	public function get_last_run() {
 		return $this->last_run;
 	}
@@ -279,42 +293,21 @@ final class Monitor {
 	 * @return array - our data for sending to support
 	 */
 	public function compile() {
-		$data = new \StdClass;
-		$data->cms = 'Wordpress';
-		$data->url = site_url();
-		$data->key = $this->secret_key;
-		$data->core = $this->compile_core();
-		$data->addons = $this->compile_addons();
+		$data            = new \StdClass;
+		$data->url       = site_url();
+		$data->timestamp = time();
+		$data->key       = hash( 'sha256', $data->url . $this->api_secret . $data->timestamp );
+		$data->core      = $this->compile_core();
+		$data->addons    = $this->compile_addons();
 
 		return $data;
-	}
-
-	/**
-	 * Private logger - currently only used with WP_CLI
-	 *
-	 * @param string $data - what you want to log
-	 * @param string $method - the WP_CLI method to use (log, line, warning, error, success)
-	 *
-	 * @access private
-	 */
-	private function log( $data, $method = 'log' ) {
-		// don't log anything if this is invoked from cron either as wp-cron or a wp-cli configured cron
-		if ( ( defined( 'DOING_CRON' ) && DOING_CRON ) || ! defined( 'WP_CLI' ) || ! WP_CLI ) {
-			return;
-		}
-
-		if ( ! method_exists( 'WP_CLI', $method ) ) {
-			$method = 'log';
-		}
-
-		// call_user_func( [ 'WP_CLI', $method ], strval( $data ) );
 	}
 
 	/**
 	 * Post our data to our support server
 	 *
 	 * @param boolean $blocking - whether to wait for a response from the server
-	 * @return mixed (boolean) - whether the data was successfully posted or not - always true if blocking is false
+	 * @return \WP_Error|\StdClass (boolean) - whether the data was successfully posted or not - always true if blocking is false
 	 */
 	public function post( $blocking = false ) {
 
@@ -323,12 +316,8 @@ final class Monitor {
 		$data = $this->compile();
 
 		if ( empty( $data ) ) {
-			$this->log( 'No data to post!', 'error' );
-			return false;
+			return new \WP_Error( 'no-data', 'No data to send!' );
 		}
-
-		$this->log( 'Request', 'warning' );
-		$this->log( sprintf( 'URL: %s', $this->post_url ) );
 
 		$request_args = [
 			'timeout' => 30,
@@ -339,56 +328,35 @@ final class Monitor {
 			'body' => json_encode( $data )
 		];
 
-		foreach( $request_args as $arg => $val ) {
-			if ( 'body' === $arg ) {
-				$this->log( sprintf( '%s: %s', $arg, json_encode( $data, JSON_PRETTY_PRINT ) ) );
-			} else {
-				$this->log( sprintf( '%s: %s', $arg, ( is_array( $val ) ? json_encode( $val, JSON_PRETTY_PRINT ) : $val ) ) );
-			}
-		}
-
 		if ( defined( 'WDG_SUPPORT_MONITOR_ALLOW_LOCALHOST' ) && WDG_SUPPORT_MONITOR_ALLOW_LOCALHOST ) {
 			add_filter( 'http_request_host_is_external', '__return_true' );
 		}
 
-		if ( ! wp_http_validate_url( $this->post_url ) ) {
-			$this->log( 'Invalid request URL! - ' . $this->post_url, 'error' );
-			return false;
+		if ( ! wp_http_validate_url( $this->api_endpoint ) ) {
+			return new \WP_Error( 'invalid-api-endpoint', sprintf( 'Invalid API Endpoint: %s', strval( $this->api_endpoint ) ) );
 		}
 
-		$request = wp_remote_post( $this->post_url, $request_args );
+		$request = wp_remote_post( $this->api_endpoint, $request_args );
 
 		if ( defined( 'WDG_SUPPORT_MONITOR_ALLOW_LOCALHOST' ) && WDG_SUPPORT_MONITOR_ALLOW_LOCALHOST ) {
 			remove_filter( 'http_request_host_is_external', '__return_true' );
 		}
 
-		$this->log( '' );
-		$this->log( 'Response', 'warning' );
-		foreach( $request['headers'] as $name => $val ) {
-			$this->log( sprintf( '%s: %s', $name, $val ) );
+		$response = new \StdClass;
+
+		$response->timestamp = current_time( 'mysql', 0 );
+		$response->data      = $data;
+		$response->request   = $request;
+
+		if ( ! $blocking || ( $request['response']['code'] >= 200 && $request['response']['code'] < 300 ) ) {
+			$response->success = true;
+		} else {
+			$response->success = true;
 		}
 
-		$this->log( '' );
-		$this->log( strval( $request['body'] ) );
+		update_option( self::LAST_RUN_KEY, $response );
 
-		if ( ! $blocking || $request['response']['code'] === 200 ) {
-			$processed = true;
-
-			$last_run = new \StdClass;
-			$last_run->timestamp = current_time( 'mysql', 0 );
-			$last_run->data = $data;
-
-			$this->log( '' );
-			$this->log( sprintf( 'Last Run: %s', print_r( $last_run, true) ) );
-
-			update_option( self::LAST_RUN_KEY, $last_run );
-
-			$this->log( 'Done!', 'success' );
-			return true;
-		}
-
-		$this->log( 'Unable to post!', 'error' );
-		return false;
+		return $response;
 	}
 
 	/**
@@ -433,10 +401,10 @@ final class Monitor {
 	/**
 	 * Schedule our cron hook
 	 *
-	 * @access private
+	 * @access public
 	 * @return boolean - false if there was a problem scheduling the event
 	 */
-	private function schedule() {
+	public function schedule() {
 		if ( ! wp_next_scheduled ( self::EVENT ) ) {
 			return wp_schedule_event( time(), 'twicedaily', self::EVENT ) !== false;
 		}
@@ -447,10 +415,10 @@ final class Monitor {
 	/**
 	 * Unschedule our cron hook
 	 *
-	 * @access private
+	 * @access public
 	 * @return boolean - false if there was a problem unscheduling the event
 	 */
-	private function unschedule() {
+	public function unschedule() {
 		$timestamp = wp_next_scheduled( self::EVENT );
 
 		if ( ! empty( $timestamp ) ) {
@@ -464,7 +432,7 @@ final class Monitor {
 	 * Schedule our cron on activation
 	 *
 	 * @access public
-	 * @return undefined
+	 * @return void
 	 */
 	public static function activation_hook() {
 		self::get_instance()->schedule();
@@ -474,7 +442,7 @@ final class Monitor {
 	 * Placeholder for deletion hook to delete our options data
 	 *
 	 * @access public
-	 * @return undefined
+	 * @return void
 	 */
 	public static function deactivation_hook() {
 		self::get_instance()->unschedule();
@@ -484,7 +452,7 @@ final class Monitor {
 	 * Placeholder for deletion hook to delete our options data
 	 *
 	 * @access public
-	 * @return undefined
+	 * @return void
 	 */
 	public static function uninstall_hook() {
 		delete_option( self::LAST_RUN_KEY );
