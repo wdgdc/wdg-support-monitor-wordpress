@@ -56,7 +56,7 @@ final class Monitor {
 	 * @var string
 	 * @access private
 	 */
-	private $api_endpoint = 'http://localhost';
+	private $api_endpoint;
 
 	/**
 	 * The key that is generated from the supmon tool
@@ -81,6 +81,11 @@ final class Monitor {
 	 * @return \WDGDC\SupportMonitor\Monitor
 	 */
 	private function __construct() {
+		// add our activate/deactivate/uninstall hooks
+		register_activation_hook( __FILE__, [ __CLASS__, 'activation_hook' ] );
+		register_deactivation_hook( __FILE__, [ __CLASS__, 'deactivation_hook' ] );
+		register_uninstall_hook( __FILE__, [ __CLASS__, 'uninstall_hook' ] );
+
 		// define the secret key in the config file or hash the server name to enter in the supmon backend
 		if ( defined( 'WDG_SUPPORT_MONITOR_API_SECRET' ) && ! empty( WDG_SUPPORT_MONITOR_API_SECRET ) ) {
 			$this->api_secret = WDG_SUPPORT_MONITOR_API_SECRET;
@@ -93,6 +98,11 @@ final class Monitor {
 			$this->api_endpoint = untrailingslashit( WDG_SUPPORT_MONITOR_API_ENDPOINT );
 		}
 
+		// don't schedule an event if we're misconfigured
+		if ( empty( $this->api_secret ) || empty( $this->api_endpoint ) ) {
+			return;
+		}
+
 		// run again if we don't know the last time it ran, or was over 12 hours ago (cron is probably disabled or having issues)
 		$this->last_run = get_option( self::LAST_RUN_KEY );
 
@@ -102,11 +112,6 @@ final class Monitor {
 
 		// add our post action to our cron event
 		add_action( self::EVENT, [ $this, 'post' ] );
-
-		// add our activate/deactivate/uninstall hooks
-		register_activation_hook( __FILE__, [ __CLASS__, 'activation_hook' ] );
-		register_deactivation_hook( __FILE__, [ __CLASS__, 'deactivation_hook' ] );
-		register_uninstall_hook( __FILE__, [ __CLASS__, 'uninstall_hook' ] );
 	}
 
 	/**
@@ -310,6 +315,8 @@ final class Monitor {
 	 * @return \WP_Error|\StdClass (boolean) - whether the data was successfully posted or not - always true if blocking is false
 	 */
 	public function post( $blocking = false ) {
+
+
 
 		flush(); // flush the output just in case we're on the front end
 
