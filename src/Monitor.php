@@ -122,6 +122,24 @@ final class Monitor {
 	public function get_last_run() {
 		return $this->last_run;
 	}
+	
+	/**
+	 * Get the api endpoint of the monitor
+	 *
+	 * @return \StdClass
+	 */
+	public function get_api_endpoint() {
+		return $this->api_endpoint;
+	}
+	
+	/**
+	 * Get the api secret of the monitor
+	 *
+	 * @return \StdClass
+	 */
+	public function get_api_secret() {
+		return $this->api_secret;
+	}
 
 	/**
 	 * Magic getter for referncing private (read-only) variables

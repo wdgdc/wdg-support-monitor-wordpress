@@ -66,8 +66,8 @@ if ( class_exists( 'WP_CLI_Command' ) ) :
 			$monitor = Monitor::get_instance();
 
 			$data = [
-				'API Endpoint' => $monitor->post_url,
-				'API Secret'   => $monitor->secret_key,
+				'API Endpoint' => $monitor->get_api_endpoint(),
+				'API Secret'   => $monitor->get_api_secret(),
 				'Last Run'     => $monitor->get_last_run() ? $monitor->get_last_run()->timestamp : 'Never',
 			];
 
