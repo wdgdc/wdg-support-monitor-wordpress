@@ -1,6 +1,6 @@
 <?php
 
-namespace WDGDC\SupportMonitor;
+namespace WDG\SupportMonitor;
 
 if ( class_exists( 'WP_CLI_Command' ) ) :
 	/**
@@ -103,6 +103,42 @@ if ( class_exists( 'WP_CLI_Command' ) ) :
 			$data = Monitor::get_instance()->compile();
 
 			$this->format_items( $data, $assoc_args );
+		}
+
+		/**
+		 * Manually schedule the cron event
+		 */
+		public function schedule() {
+			$result = Monitor::get_instance()->schedule();
+
+			if ( is_wp_error( $result ) ) {
+				\WP_CLI::error( $result->get_error_message() );
+			}
+
+			if ( true === $result ) {
+				\WP_CLI::success( 'Event successfully scheduled' );
+				exit;
+			}
+
+			\WP_CLI::error( 'There was an unknown error' );
+		}
+
+		/**
+		 * Manually unschedule the cron event
+		 */
+		public function unschedule() {
+			$result = Monitor::get_instance()->unschedule();
+
+			if ( is_wp_error( $result ) ) {
+				\WP_CLI::error( $result->get_error_message() );
+			}
+
+			if ( true === $result ) {
+				\WP_CLI::success( 'Event successfully unscheduled' );
+				exit;
+			}
+
+			\WP_CLI::error( 'There was an unknown error' );
 		}
 
 		/**

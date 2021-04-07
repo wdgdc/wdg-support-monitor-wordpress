@@ -9,7 +9,7 @@
 			"src/index.php"
 		],
 		"psr-4": {
-			"WDGDC\\SupportMonitor\\": "src/"
+			"WDG\\SupportMonitor\\": "src/"
 		}
 	}
 }

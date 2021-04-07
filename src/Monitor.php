@@ -6,7 +6,7 @@
  * @package SupportMonitor
  */
 
-namespace WDGDC\SupportMonitor;
+namespace WDG\SupportMonitor;
 
 final class Monitor {
 
@@ -81,11 +81,6 @@ final class Monitor {
 	 * @return \WDGDC\SupportMonitor\Monitor
 	 */
 	private function __construct() {
-		// add our activate/deactivate/uninstall hooks
-		register_activation_hook( __FILE__, [ __CLASS__, 'activation_hook' ] );
-		register_deactivation_hook( __FILE__, [ __CLASS__, 'deactivation_hook' ] );
-		register_uninstall_hook( __FILE__, [ __CLASS__, 'uninstall_hook' ] );
-
 		// define the secret key in the config file or hash the server name to enter in the supmon backend
 		if ( defined( 'WDG_SUPPORT_MONITOR_API_SECRET' ) && ! empty( WDG_SUPPORT_MONITOR_API_SECRET ) ) {
 			$this->api_secret = WDG_SUPPORT_MONITOR_API_SECRET;
@@ -333,9 +328,6 @@ final class Monitor {
 	 * @return \WP_Error|\StdClass (boolean) - whether the data was successfully posted or not - always true if blocking is false
 	 */
 	public function post( $blocking = false ) {
-
-
-
 		flush(); // flush the output just in case we're on the front end
 
 		$data = $this->compile();
