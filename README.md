@@ -19,6 +19,6 @@ As a dependency of a plugin or theme, install the package from the composer repo
 Copy the configuration constants from the WDG Support Monitor for the property. You will need to define:
 
 ```
-defined( 'WDG_SUPPORT_MONITOR_API_ENDPOINT', 'XXXXXXX' );
-defined( 'WDG_SUPPORT_MONITOR_API_SECRET', 'XXXXXXX' );
+define( 'WDG_SUPPORT_MONITOR_API_ENDPOINT', 'XXXXXXX' );
+define( 'WDG_SUPPORT_MONITOR_API_SECRET', 'XXXXXXX' );
 ```
