@@ -29,7 +29,7 @@ final class Monitor {
 	/**
 	 * Singleton holder
 	 *
-	 * @var \WDGDC\SupportMonitor\Monitor
+	 * @var \WDG\SupportMonitor\Monitor
 	 * @access private
 	 * @static
 	 */
@@ -38,7 +38,7 @@ final class Monitor {
 	/**
 	 * singleton method for plugin, don't need more than one of these
 	 *
-	 * @return \WDGDC\SupportMonitor\Monitor
+	 * @return \WDG\SupportMonitor\Monitor
 	 * @access public
 	 * @static
 	 */
@@ -78,7 +78,7 @@ final class Monitor {
 	 * Plugin construct
 	 *
 	 * @access private
-	 * @return \WDGDC\SupportMonitor\Monitor
+	 * @return \WDG\SupportMonitor\Monitor
 	 */
 	private function __construct() {
 		// define the secret key in the config file or hash the server name to enter in the supmon backend
@@ -98,12 +98,7 @@ final class Monitor {
 			return;
 		}
 
-		// run again if we don't know the last time it ran, or was over 12 hours ago (cron is probably disabled or having issues)
-		$this->last_run = get_option( self::LAST_RUN_KEY );
-
-		if ( empty( $this->last_run ) || empty( $this->last_run->success ) || empty( $this->last_run->timestamp ) || ( current_time('timestamp') - strtotime( $this->last_run->timestamp ) > 12 * HOUR_IN_SECONDS ) ) {
-			add_action( 'shutdown', [ $this, 'post' ] );
-		}
+		$this->get_last_run();
 
 		// add our post action to our cron event
 		add_action( self::EVENT, [ $this, 'post' ] );
@@ -115,9 +110,13 @@ final class Monitor {
 	 * @return \StdClass
 	 */
 	public function get_last_run() {
+		if ( ! isset( $this->last_run ) ) {
+			$this->last_run = get_option( self::LAST_RUN_KEY );
+		}
+
 		return $this->last_run;
 	}
-	
+
 	/**
 	 * Get the api endpoint of the monitor
 	 *
@@ -126,7 +125,7 @@ final class Monitor {
 	public function get_api_endpoint() {
 		return $this->api_endpoint;
 	}
-	
+
 	/**
 	 * Get the api secret of the monitor
 	 *
@@ -423,7 +422,7 @@ final class Monitor {
 	 */
 	public function schedule() {
 		if ( ! wp_next_scheduled ( self::EVENT ) ) {
-			return wp_schedule_event( time(), 'twicedaily', self::EVENT ) !== false;
+			return wp_schedule_event( time(), 'twicedaily', self::EVENT );
 		}
 
 		return true;
@@ -439,7 +438,7 @@ final class Monitor {
 		$timestamp = wp_next_scheduled( self::EVENT );
 
 		if ( ! empty( $timestamp ) ) {
-			return wp_unschedule_event( $timestamp, self::EVENT ) !== false;
+			return wp_unschedule_event( $timestamp, self::EVENT );
 		}
 
 		return true;
