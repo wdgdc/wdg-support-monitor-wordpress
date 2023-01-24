@@ -9,7 +9,9 @@ class Scripts {
 
 			exec( 'rm -rf ./vendor' );
 			exec( 'composer install --no-dev --prefer-dist --optimize-autoloader' );
-			exec( sprintf( 'zip -r %s src vendor composer.json index.php LICENSE README.md', $fileName ) );
+			exec( 'mkdir ./wdg-support-monitor && cp -r src vendor composer.json index.php LICENSE README.md wdg-support-monitor');
+			exec( sprintf( 'zip -r %s wdg-support-monitor', $fileName ) );
+			exec( 'rm -rf ./wdg-support-monitor' );
 		} catch ( \Throwable $e ) {
 			$event->getIO()->writeError( $e->getMessage() );
 		}
