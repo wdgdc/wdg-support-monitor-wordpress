@@ -98,6 +98,19 @@ final class Monitor {
 			return;
 		}
 
+		// modify site_url to use constant if defined
+		if ( defined( 'WDG_SUPPORT_MONITOR_SITE_URL' ) && WDG_SUPPORT_MONITOR_SITE_URL ) {
+			// return apply_filters( 'site_url', $url, $path, $scheme, $blog_id );
+			add_filter(
+				'site_url',
+				function ( $url ) {
+					return WDG_SUPPORT_MONITOR_SITE_URL;
+				}
+			);
+		}
+
+		dd( site_url() );
+
 		// allow localhost api endpoint requests for testing
 		if ( defined( 'WDG_SUPPORT_MONITOR_ALLOW_LOCALHOST' ) && WDG_SUPPORT_MONITOR_ALLOW_LOCALHOST ) {
 			add_filter(
