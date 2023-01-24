@@ -98,19 +98,6 @@ final class Monitor {
 			return;
 		}
 
-		// modify site_url to use constant if defined
-		if ( defined( 'WDG_SUPPORT_MONITOR_SITE_URL' ) && WDG_SUPPORT_MONITOR_SITE_URL ) {
-			// return apply_filters( 'site_url', $url, $path, $scheme, $blog_id );
-			add_filter(
-				'site_url',
-				function ( $url ) {
-					return WDG_SUPPORT_MONITOR_SITE_URL;
-				}
-			);
-		}
-
-		dd( site_url() );
-
 		// allow localhost api endpoint requests for testing
 		if ( defined( 'WDG_SUPPORT_MONITOR_ALLOW_LOCALHOST' ) && WDG_SUPPORT_MONITOR_ALLOW_LOCALHOST ) {
 			add_filter(
@@ -338,8 +325,15 @@ final class Monitor {
 	 * @return array - our data for sending to support
 	 */
 	public function compile() {
+
+		$site_url = site_url();
+		// modify site_url to use constant if defined
+		if ( defined( 'WDG_SUPPORT_MONITOR_SITE_URL' ) && WDG_SUPPORT_MONITOR_SITE_URL ) {
+			$site_url = WDG_SUPPORT_MONITOR_SITE_URL;
+		}
+
 		$data            = new \StdClass;
-		$data->url       = site_url();
+		$data->url       = $site_url;
 		$data->timestamp = time();
 		$data->key       = hash( 'sha256', $data->url . $this->api_secret . $data->timestamp );
 		$data->core      = $this->compile_core();
