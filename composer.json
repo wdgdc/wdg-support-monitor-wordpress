@@ -2,7 +2,7 @@
 	"name": "wdgdc/wdg-wp-support-monitor",
 	"description": "A package to monitor WordPress status",
 	"type": "library",
-	"version": "1.0.2",
+	"version": "1.0.3",
 	"autoload": {
 		"files": [
 			"src/index.php"
