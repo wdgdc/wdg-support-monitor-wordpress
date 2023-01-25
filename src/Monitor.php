@@ -151,6 +151,21 @@ final class Monitor {
 	}
 
 	/**
+	 * Get the site_url of the monitor
+	 *
+	 * @return \StdClass
+	 */
+	public function get_site_url() {
+		$site_url = site_url();
+		
+		if ( defined( 'WDG_SUPPORT_MONITOR_SITE_URL' ) && WDG_SUPPORT_MONITOR_SITE_URL ) {
+			$site_url = WDG_SUPPORT_MONITOR_SITE_URL;
+		}
+
+		return $site_url;
+	}
+
+	/**
 	 * Magic getter for referncing private (read-only) variables
 	 *
 	 * @param string
@@ -319,6 +334,24 @@ final class Monitor {
 	}
 
 	/**
+	 * Output support monitor info.
+	 *
+	 * @access public
+	 * @return array - our data 
+	 */
+	public function info() {
+
+		$data = [
+			'API Endpoint' => $this->get_api_endpoint(),
+			'API Secret'   => $this->get_api_secret(),
+			'Site URL'     => $this->get_site_url(),
+			'Last Run'     => $this->get_last_run() ? $this->get_last_run()->timestamp : 'Never',
+		];
+
+		return $data;
+	}
+
+	/**
 	 * Gather our core and plugin data
 	 *
 	 * @access public
@@ -326,14 +359,8 @@ final class Monitor {
 	 */
 	public function compile() {
 
-		$site_url = site_url();
-		// modify site_url to use constant if defined
-		if ( defined( 'WDG_SUPPORT_MONITOR_SITE_URL' ) && WDG_SUPPORT_MONITOR_SITE_URL ) {
-			$site_url = WDG_SUPPORT_MONITOR_SITE_URL;
-		}
-
 		$data            = new \StdClass;
-		$data->url       = $site_url;
+		$data->url       = $this->get_site_url();
 		$data->timestamp = time();
 		$data->key       = hash( 'sha256', $data->url . $this->api_secret . $data->timestamp );
 		$data->core      = $this->compile_core();

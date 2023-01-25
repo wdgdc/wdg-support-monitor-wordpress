@@ -55,7 +55,7 @@ if ( class_exists( 'WP_CLI_Command' ) ) :
 		 * [--format=<format>]
 		 * : Render the data in the specified format
 		 * ---
-		 * default: table
+		 * default: yaml
 		 * options:
 		 *   - table
 		 *   - csv
@@ -63,13 +63,9 @@ if ( class_exists( 'WP_CLI_Command' ) ) :
 		 *   - yaml
 		 */
 		public function info( $args, $assoc_args ) {
+		
 			$monitor = Monitor::get_instance();
-
-			$data = [
-				'API Endpoint' => $monitor->get_api_endpoint(),
-				'API Secret'   => $monitor->get_api_secret(),
-				'Last Run'     => $monitor->get_last_run() ? $monitor->get_last_run()->timestamp : 'Never',
-			];
+			$data = $monitor->info();
 
 			$next_scheduled = wp_next_scheduled( $monitor::EVENT );
 			$data[ 'Next Scheduled' ] = ( $next_scheduled ) ? date( 'Y-m-d h:i:s', $next_scheduled ) : 'Not scheduled';
