@@ -334,6 +334,22 @@ final class Monitor {
 	}
 
 	/**
+	 * Compile our extras data
+	 *
+	 * @return array - collection of additional stats
+	 * @access private
+	 */
+	private function compile_extras() {
+		$data = [];
+		
+		if ( defined( 'PHP_VERSION' ) ) {
+			$data['php_version'] = PHP_VERSION;
+		}
+		
+		return $data;
+	}
+	
+	/**
 	 * Output support monitor info.
 	 *
 	 * @access public
@@ -365,6 +381,7 @@ final class Monitor {
 		$data->key       = hash( 'sha256', $data->url . $this->api_secret . $data->timestamp );
 		$data->core      = $this->compile_core();
 		$data->addons    = $this->compile_addons();
+		$data->extras    = $this->compile_extras();
 
 		return $data;
 	}
