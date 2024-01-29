@@ -165,6 +165,21 @@ final class Monitor {
 		return $site_url;
 	}
 
+    /**
+     * Get the site_host of the monitor
+     *
+     * @return \StdClass
+     */
+    public function get_site_host() {
+        $site_host = '';
+
+        if ( defined( 'WDG_SUPPORT_MONITOR_SITE_HOST' ) && WDG_SUPPORT_MONITOR_SITE_HOST ) {
+            $site_host = WDG_SUPPORT_MONITOR_SITE_HOST;
+        }
+
+        return $site_host;
+    }
+
 	/**
 	 * Magic getter for referncing private (read-only) variables
 	 *
@@ -361,6 +376,7 @@ final class Monitor {
 			'API Endpoint' => $this->get_api_endpoint(),
 			'API Secret'   => $this->get_api_secret(),
 			'Site URL'     => $this->get_site_url(),
+			'Site Host'     => $this->get_site_host(),
 			'Last Run'     => $this->get_last_run() ? $this->get_last_run()->timestamp : 'Never',
 		];
 
@@ -377,6 +393,7 @@ final class Monitor {
 
 		$data            = new \StdClass;
 		$data->url       = $this->get_site_url();
+		$data->host       = $this->get_site_host();
 		$data->timestamp = time();
 		$data->key       = hash( 'sha256', $data->url . $this->api_secret . $data->timestamp );
 		$data->core      = $this->compile_core();
