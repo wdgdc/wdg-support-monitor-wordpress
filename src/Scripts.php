@@ -10,6 +10,7 @@ class Scripts {
 			exec( 'rm -rf ./vendor' );
 			exec( 'composer install --no-dev --prefer-dist --optimize-autoloader' );
 			exec( 'mkdir ./wdg-support-monitor && cp -r src vendor composer.json index.php LICENSE README.md wdg-support-monitor');
+			self::create_info_json( $version, $file_name );
 			exec( sprintf( 'zip -r %s wdg-support-monitor', $file_name ) );
 			exec( 'rm -rf ./wdg-support-monitor' );
 			
@@ -17,6 +18,21 @@ class Scripts {
 		} catch ( \Throwable $e ) {
 			$event->getIO()->writeError( $e->getMessage() );
 		}
+	}
+	
+	private static function create_info_json( $version, $file_name ) {
+	
+		$info_json = [
+			'name' => "WDG Support Monitor",	
+			"slug" => "wdg-support-monitor",
+			'author' => 'WDG - The Web Development Group',
+			'author_profile' => 'https://www.webdevelopmentgroup.com',
+			'version' => $version,
+			'download_url' => 'https://plugins.wdg.dev/plugins/' . $file_name
+		];
+		
+		file_put_contents( dirname( __DIR__ ) . '/wdg-support-monitor/info.json', json_encode( $info_json, JSON_PRETTY_PRINT ) );
+		
 	}
 
 	/**
