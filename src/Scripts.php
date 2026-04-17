@@ -31,7 +31,7 @@ class Scripts {
 			'download_url' => 'https://plugins.wdg.dev/plugins/' . $file_name
 		];
 		
-		file_put_contents( dirname( __DIR__ ) . '/wdg-support-monitor/info.json', json_encode( $info_json, JSON_PRETTY_PRINT ) );
+		file_put_contents( dirname( __DIR__ ) . '/info.json', json_encode( $info_json, JSON_PRETTY_PRINT ) );
 		
 	}
 

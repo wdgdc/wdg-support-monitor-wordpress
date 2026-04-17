@@ -6,6 +6,7 @@
  * Author: WDG - The Web Development Group
  * Author URI: https://www.webdevelopmentgroup.com
  * Text Domain: wdg-support-monitor
+ * Update URI: https://plugins.wdg.dev
  */
 
 namespace WDG\SupportMonitor;
