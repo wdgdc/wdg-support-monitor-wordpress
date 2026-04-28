@@ -1,0 +1,70 @@
+name: "Release Zip"
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    permissions:
+      contents: write
+    name: "Release Zip"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Environment Variable Setup"
+        run: |
+          echo "PLUGIN_SLUG=${GITHUB_REPOSITORY/\//-}" >> $GITHUB_ENV
+          echo "PRETTY_VERSION=${GITHUB_REF_NAME/v/}" >> $GITHUB_ENV
+
+      - name: "Checkout"
+        uses: actions/checkout@v6
+        with:
+          path: repo
+
+      - name: "Create Build Directory"
+        run: |
+          mkdir -p build/${{ env.PLUGIN_SLUG }}
+          rsync -a repo/ build/${{ env.PLUGIN_SLUG }}/ \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='node_modules/' \
+            --exclude='vendor/' \
+            --exclude='.gitignore' \
+            --exclude='*.log' \
+            --exclude='*.zip' \
+            --exclude='package.json' \
+            --exclude='package-lock.json' \
+            --exclude='webpack.config.js'
+
+      - name: "Composer Install"
+        uses: php-actions/composer@v6
+        env:
+          COMPOSER_ROOT_VERSION: ${{ env.PRETTY_VERSION }}
+        with:
+          args: --optimize-autoloader --no-dev
+          working_dir: build/${{ env.PLUGIN_SLUG }}
+
+      - name: "Composer Build Plugin"
+        uses: php-actions/composer@v6
+        env:
+          COMPOSER_ROOT_VERSION: ${{ env.PRETTY_VERSION }}
+        with:
+          command: build-plugin
+          working_dir: build/${{ env.PLUGIN_SLUG }}
+
+      - name: "Zip Plugin"
+        working-directory: build
+        run: |
+          zip -r ${{ env.PLUGIN_SLUG }}-${{ env.PRETTY_VERSION }}.zip ${{ env.PLUGIN_SLUG }} -x \
+            "${{ env.PLUGIN_SLUG }}/composer.json" \
+            "${{ env.PLUGIN_SLUG }}/composer.lock" \
+            "${{ env.PLUGIN_SLUG }}/.*"
+
+      - name: "Upload Zip"
+        working-directory: repo
+        run: |
+          gh release upload "$RELEASE" "$ZIP_PATH" --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE: ${{ github.ref_name }}
+          ZIP_PATH: ${{ github.workspace }}/build/${{ env.PLUGIN_SLUG }}-${{ env.PRETTY_VERSION }}.zip

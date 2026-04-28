@@ -142,55 +142,50 @@ final class Monitor {
 		if ( $plugin_file !== str_replace(  '/src', '/index.php', plugin_basename( __DIR__ ) ) ) {
 			return $update;
 		}
+		
+		$update = \wp_cache_get( $plugin_file, 'plugins' );
+		
+		if ( false === $update ) {
 
-		// info.json is the file with the actual plugin information on your server
-		$remote = wp_remote_get(
-			self::UPDATE_INFO_FILE_URL,
-			array(
-				'timeout' => 10,
-				'headers' => array(
-					'Accept' => 'application/json'
+			// info.json is the file with the actual plugin information on your server
+			$remote = wp_remote_get(
+				self::UPDATE_INFO_FILE_URL,
+				array(
+					'timeout' => 10,
+					'headers' => array(
+						'Accept' => 'application/json'
+					)
 				)
-			)
-		);
+			);
 
-		// do nothing if we don't get the correct response from the server
-		if (
-			is_wp_error( $remote )
-			|| 200 !== wp_remote_retrieve_response_code( $remote )
-			|| empty( wp_remote_retrieve_body( $remote ) )
-		) {
-			return $update;
+			// do nothing if we don't get the correct response from the server
+			if (
+				is_wp_error( $remote )
+				|| 200 !== wp_remote_retrieve_response_code( $remote )
+				|| empty( wp_remote_retrieve_body( $remote ) )
+			) {
+				return $update;
+			}
+
+			$remote = json_decode( wp_remote_retrieve_body( $remote ) );
+
+			$update = new \stdClass();
+			$update->name = $remote->name;
+			$update->slug = $remote->slug;
+			$update->author = $remote->author;
+			$update->author_profile = $remote->author_profile;
+			$update->version = $remote->version;
+			$update->tested = $remote->tested ?? '6.9.4';
+			$update->requires_php = $remote->requires_php ?? '8.1';
+			$update->url = $remote->download_url;
+			$update->package = $remote->download_url;
+			if( ! empty( $remote->sections->screenshots ) ) {
+				$update->sections[ 'screenshots' ] = $remote->sections->screenshots;
+			}
+
+			\wp_cache_set( $plugin_file, $update, 'plugins', HOUR_IN_SECONDS * 12 );
 		}
-
-		$remote = json_decode( wp_remote_retrieve_body( $remote ) );
-
-		$update = new \stdClass();
-		$update->name = $remote->name;
-		$update->slug = $remote->slug;
-		$update->author = $remote->author;
-		$update->author_profile = $remote->author_profile;
-		$update->version = $remote->version;
-		$update->tested = $remote->tested ?? '6.9.4';
-		$update->requires = $remote->requires;
-		$update->requires_php = $remote->requires_php ?? '8.1';
-		$update->url = $remote->download_url;
-		$update->package = $remote->download_url;
-		$update->last_updated = $remote->last_updated;
-		// $update->sections = array(
-		// 	'description' => $remote->sections->description,
-		// 	'installation' => $remote->sections->installation,
-		// 	'changelog' => $remote->sections->changelog
-		// );
-		if( ! empty( $remote->sections->screenshots ) ) {
-			$update->sections[ 'screenshots' ] = $remote->sections->screenshots;
-		}
-
-		// $update->banners = array(
-		// 	'low' => $remote->banners->low,
-		// 	'high' => $remote->banners->high
-		// );
-
+		
 		return $update;
 
 	}
