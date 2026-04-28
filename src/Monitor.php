@@ -26,15 +26,6 @@ final class Monitor {
 	 */
 	const LAST_RUN_KEY = 'wdg_support_monitor_last_run';
 
-
-	/**
-	 * The url of the info.json file
-	 *
-	 * @var string
-	 * @access public
-	 */
-	const UPDATE_INFO_FILE_URL = 'https://plugins.wdg.dev/info.json';
-
 	/**
 	 * Singleton holder
 	 *
@@ -126,66 +117,6 @@ final class Monitor {
 
 		// add our post action to our cron event
 		add_action( self::EVENT, [ $this, 'post' ] );
-	}
-
-
-	/*
-	 * $res empty at this step
-	 * $action 'plugin_information'
-	 * $args stdClass Object ( [slug] => woocommerce [is_ssl] => [fields] => Array ( [banners] => 1 [reviews] => 1 [downloaded] => [active_installs] => 1 ) [per_page] => 24 [locale] => en_US )
-	 */
-	// false, $plugin_data, $plugin_file, $locale
-	public function plugin_info( $update, $plugin_data, $plugin_file, $locale ){
-
-		if ( $plugin_file !== str_replace(  '/src', '/index.php', plugin_basename( __DIR__ ) ) ) {
-			return $update;
-		}
-		
-		$update = \wp_cache_get( $plugin_file, 'plugins' );
-		
-		if ( false === $update ) {
-
-			// info.json is the file with the actual plugin information on your server
-			$remote = wp_remote_get(
-				self::UPDATE_INFO_FILE_URL,
-				array(
-					'timeout' => 10,
-					'headers' => array(
-						'Accept' => 'application/json'
-					)
-				)
-			);
-
-			// do nothing if we don't get the correct response from the server
-			if (
-				is_wp_error( $remote )
-				|| 200 !== wp_remote_retrieve_response_code( $remote )
-				|| empty( wp_remote_retrieve_body( $remote ) )
-			) {
-				return $update;
-			}
-
-			$remote = json_decode( wp_remote_retrieve_body( $remote ) );
-
-			$update = new \stdClass();
-			$update->name = $remote->name;
-			$update->slug = $remote->slug;
-			$update->author = $remote->author;
-			$update->author_profile = $remote->author_profile;
-			$update->version = $remote->version;
-			$update->tested = $remote->tested ?? '6.9.4';
-			$update->requires_php = $remote->requires_php ?? '8.1';
-			$update->url = $remote->download_url;
-			$update->package = $remote->download_url;
-			if( ! empty( $remote->sections->screenshots ) ) {
-				$update->sections[ 'screenshots' ] = $remote->sections->screenshots;
-			}
-
-			\wp_cache_set( $plugin_file, $update, 'plugins', HOUR_IN_SECONDS * 12 );
-		}
-		
-		return $update;
-
 	}
 
 	/**

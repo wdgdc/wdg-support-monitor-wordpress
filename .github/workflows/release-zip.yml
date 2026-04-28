@@ -60,7 +60,7 @@ jobs:
             "${{ env.PLUGIN_SLUG }}/composer.lock" \
             "${{ env.PLUGIN_SLUG }}/.*"
 
-      - name: "Upload Zip"
+      - name: "Upload Zip to GitHub Release"
         working-directory: repo
         run: |
           gh release upload "$RELEASE" "$ZIP_PATH" --clobber
@@ -68,3 +68,20 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE: ${{ github.ref_name }}
           ZIP_PATH: ${{ github.workspace }}/build/${{ env.PLUGIN_SLUG }}-${{ env.PRETTY_VERSION }}.zip
+
+      - name: "Composer Create info.json"
+          uses: php-actions/composer@v6
+          env:
+            COMPOSER_ROOT_VERSION: ${{ env.PRETTY_VERSION }}
+          with:
+            command: create-info-json
+            working_dir: build/${{ env.PLUGIN_SLUG }}
+          
+      - name: "Upload Zip to WDG Dev"
+        working-directory: repo
+        run: |
+          rsync -avz --progress ${{ github.workspace }}/build/${{ env.PLUGIN_SLUG }}-${{ env.PRETTY_VERSION }}.zip ${{ vars.DEV_DEPLOY_USER }}@${{ vars.DEV_DEPLOY_HOST }}:${{ vars.DEV_DEPLOY_PATH }}
+        env:
+          WDG_DEV_USER: ${{ secrets.WDG_DEV_USER }}
+          WDG_DEV_HOST: ${{ secrets.WDG_DEV_HOST }}
+          WDG_DEV_PATH: ${{ secrets.WDG_DEV_PATH }}

@@ -13,6 +13,15 @@ class Core {
 	 * Package slug
 	 */
 	const SLUG = 'wdg-support-monitor';
+	
+	/**
+	 * The url of the info.json file
+	 *
+	 * @var string
+	 * @access public
+	 */
+	const UPDATE_INFO_FILE_URL = 'https://plugins.wdg.dev/info.json';
+	
 
 	/**
 	 * Version of the package/plugin
@@ -79,5 +88,66 @@ class Core {
 		add_filter( 'update_plugins_plugins.wdg.dev', [ $this, 'plugin_info' ], 20, 4 );
 
 	}
+	
+
+	/*
+	 * $res empty at this step
+	 * $action 'plugin_information'
+	 * $args stdClass Object 
+	 */
+	// false, $plugin_data, $plugin_file, $locale
+	public function plugin_info( $update, $plugin_data, $plugin_file, $locale ){
+
+		if ( $plugin_file !== str_replace(  '/src', '/index.php', plugin_basename( __DIR__ ) ) ) {
+			return $update;
+		}
+		
+		$update = \wp_cache_get( $plugin_file, 'plugins' );
+		
+		if ( false === $update ) {
+
+			// info.json is the file with the actual plugin information on your server
+			$remote = wp_remote_get(
+				self::UPDATE_INFO_FILE_URL,
+				array(
+					'timeout' => 10,
+					'headers' => array(
+						'Accept' => 'application/json'
+					)
+				)
+			);
+
+			// do nothing if we don't get the correct response from the server
+			if (
+				is_wp_error( $remote )
+				|| 200 !== wp_remote_retrieve_response_code( $remote )
+				|| empty( wp_remote_retrieve_body( $remote ) )
+			) {
+				return $update;
+			}
+
+			$remote = json_decode( wp_remote_retrieve_body( $remote ) );
+
+			$update = new \stdClass();
+			$update->name = $remote->name;
+			$update->slug = $remote->slug;
+			$update->author = $remote->author;
+			$update->author_profile = $remote->author_profile;
+			$update->version = $remote->version;
+			$update->tested = $remote->tested ?? '6.9.4';
+			$update->requires_php = $remote->requires_php ?? '8.1';
+			$update->url = $remote->download_url;
+			$update->package = $remote->download_url;
+			if( ! empty( $remote->sections->screenshots ) ) {
+				$update->sections[ 'screenshots' ] = $remote->sections->screenshots;
+			}
+
+			\wp_cache_set( $plugin_file, $update, 'plugins', HOUR_IN_SECONDS * 12 );
+		}
+		
+		return $update;
+
+	}
+
 
 }
