@@ -122,8 +122,6 @@ final class Monitor {
 			);
 		}
 
-		add_filter( 'update_plugins_plugins.wdg.dev', [ $this, 'plugin_info' ], 20, 4 );
-
 		$this->get_last_run();
 
 		// add our post action to our cron event

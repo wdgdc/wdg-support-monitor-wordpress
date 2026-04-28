@@ -1,3 +1,14 @@
+# Composer (repo root only)
 /vendor/
+
+# Node Modules
+/node_modules/
+
+# Ignore swp files
+*.swp
+
+# Ignore log files
+*.log
+
+# Ignore zip files
 *.zip
-info.json
