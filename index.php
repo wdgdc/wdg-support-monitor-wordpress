@@ -1,7 +1,9 @@
 <?php
 /**
+ * %s
+ * 
  * Plugin Name: WDG Support Monitor
- * Version: 1.1.1
+ * Version: %s
  * Description: Monitors site status for support.
  * Author: WDG - The Web Development Group
  * Author URI: https://www.webdevelopmentgroup.com
