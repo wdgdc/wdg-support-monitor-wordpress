@@ -98,7 +98,7 @@ class Core {
 	// false, $plugin_data, $plugin_file, $locale
 	public function plugin_info( $update, $plugin_data, $plugin_file, $locale ){
 
-		if ( $plugin_file !== str_replace(  '/src', '/index.php', plugin_basename( __DIR__ ) ) ) {
+		if ( $plugin_file !== str_replace(  '/src', '/wdg-support-monitor.php', plugin_basename( __DIR__ ) ) ) {
 			return $update;
 		}
 		
@@ -127,6 +127,10 @@ class Core {
 			}
 
 			$remote = json_decode( wp_remote_retrieve_body( $remote ) );
+			
+			if ( is_array( $remote ) ) {
+				$remote = current( $remote );
+			}
 
 			$update = new \stdClass();
 			$update->name = $remote->name;
