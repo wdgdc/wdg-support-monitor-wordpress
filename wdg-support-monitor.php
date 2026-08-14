@@ -3,7 +3,7 @@
  * PLUGIN FILE GENERATED! Run composer build-plugin to rebuild.
  * 
  * Plugin Name: WDG Support Monitor
- * Version: dev-master
+ * Version: 1.1.2
  * Description: Monitors site status for support.
  * Author: WDG - The Web Development Group
  * Author URI: https://www.webdevelopmentgroup.com

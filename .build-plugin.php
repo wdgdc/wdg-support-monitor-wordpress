@@ -41,9 +41,15 @@ require_once __DIR__ . '/vendor/autoload.php';
 END;
 
 // File
-$file = \WDG\SupportMonitor\Core::SLUG . '.php';
+$slug = \WDG\SupportMonitor\Core::SLUG;
+$file = $slug . '.php';
 
 // Write plugin file
 file_put_contents( $file, sprintf( $template, $version ) );
 
+// zip
+
+$cmd = "zip -r {$slug}-{$version}.zip . -x@.zip-exclude ";
+echo $cmd;
+shell_exec($cmd);
 
