@@ -1,0 +1,10 @@
+composer.json
+composer.lock
+.history/*
+.github/*
+.git/*
+*.zip
+.gitignore
+.zip-exclude
+.DS_Store
+.build-plugin.php
