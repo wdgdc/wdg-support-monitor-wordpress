@@ -8,3 +8,4 @@ composer.lock
 .zip-exclude
 .DS_Store
 .build-plugin.php
+.zip-plugin.php

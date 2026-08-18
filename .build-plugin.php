@@ -46,10 +46,3 @@ $file = $slug . '.php';
 
 // Write plugin file
 file_put_contents( $file, sprintf( $template, $version ) );
-
-// zip
-
-$cmd = "zip -r {$slug}-{$version}.zip . -x@.zip-exclude ";
-echo $cmd;
-shell_exec($cmd);
-

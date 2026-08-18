@@ -12,6 +12,7 @@
 	},
 	"scripts": {
 		"release": "WDG\\SupportMonitor\\Scripts::release",
-		"build-plugin": "php .build-plugin.php"
+		"build-plugin": "php .build-plugin.php",
+		"zip-plugin": "php .zip-plugin.php"
 	}
 }
