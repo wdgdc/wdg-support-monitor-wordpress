@@ -128,8 +128,11 @@ class Core {
 
 			$remote = json_decode( wp_remote_retrieve_body( $remote ) );
 			
+			// get latest version if array
 			if ( is_array( $remote ) ) {
-				$remote = current( $remote );
+				$remote = array_reduce( $remote, function( $latest, $version ) {
+					return version_compare( $version->version, $latest->version ) > 0 ? $version : $latest;
+				}, $remote[0] );
 			}
 
 			$update = new \stdClass();
