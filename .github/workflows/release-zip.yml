@@ -79,5 +79,6 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -t rsa ${{ vars.WDGDEV_HOST }} > ~/.ssh/known_hosts
           echo "${{ secrets.WDGDEV_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
           scp -i ~/.ssh/id_rsa build/${{ env.PLUGIN_SLUG }}-${{ env.PRETTY_VERSION }}.zip developer@${{ vars.WDGDEV_HOST }}:/var/www/html/plugins/${{ env.PLUGIN_SLUG }}-${{ env.PRETTY_VERSION }}.zip
        
