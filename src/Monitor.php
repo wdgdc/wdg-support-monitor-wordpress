@@ -346,7 +346,31 @@ final class Monitor {
 			$data['php_version'] = PHP_VERSION;
 		}
 
+		$wikit_core_version = $this->get_wikit_core_version();
+
+		if ( ! empty( $wikit_core_version ) ) {
+			$data['wikit_core_version'] = $wikit_core_version;
+		}
+
 		return $data;
+	}
+
+	/**
+	 * Get the installed wdgdc/wikit-core version, if present on this site.
+	 *
+	 * @return string|null - installed version, or null if wikit-core isn't installed
+	 * @access private
+	 */
+	private function get_wikit_core_version() {
+		if ( ! class_exists( '\Composer\InstalledVersions' ) ) {
+			return null;
+		}
+
+		try {
+			return \Composer\InstalledVersions::getVersion( 'wdgdc/wikit-core' );
+		} catch ( \OutOfBoundsException $e ) {
+			return null;
+		}
 	}
 
 	/**
