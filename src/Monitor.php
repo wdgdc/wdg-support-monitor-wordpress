@@ -346,6 +346,27 @@ final class Monitor {
 			$data['php_version'] = PHP_VERSION;
 		}
 
+		// Add the installed wikit-core package version when Composer metadata is available.
+		if ( class_exists( '\Composer\InstalledVersions' ) && method_exists( '\Composer\InstalledVersions', 'getInstalledPackages' ) ) {
+			$package_name = 'wdgdc/wikit-core';
+			$packages     = \Composer\InstalledVersions::getInstalledPackages();
+
+			if ( is_array( $packages ) && in_array( $package_name, $packages, true ) ) {
+				$package_version = \Composer\InstalledVersions::getVersion( $package_name );
+
+				if ( ! empty( $package_version ) ) {
+					$data['wdg-core-version'] = $package_version;
+				}
+			}
+		}
+
+		/**
+		 * Filters the compiled extras payload before it is returned.
+		 *
+		 * @param array $data Collection of additional site metadata.
+		 */
+		$data = apply_filters( 'wdg_support_monitor_extras', $data );
+
 		return $data;
 	}
 
