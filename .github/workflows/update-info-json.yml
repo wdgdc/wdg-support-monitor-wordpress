@@ -1,0 +1,102 @@
+name: "Update info.json"
+
+# Points https://plugins.wdg.dev/info.json at a released zip so installed sites
+# see the update. Runs automatically after "Release Zip" uploads the zip, and
+# can be run by hand to re-point info.json (for example, to roll back).
+
+concurrency:
+  group: update-info-json
+  cancel-in-progress: false
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: "Plugin version without the leading v (e.g. 1.1.3)"
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Plugin version without the leading v (e.g. 1.1.3)"
+        required: true
+        type: string
+
+jobs:
+  update:
+    name: "Update info.json"
+    runs-on: ubuntu-latest
+    env:
+      PLUGIN_SLUG: wdg-support-monitor
+      VERSION: ${{ inputs.version }}
+      INFO_URL: https://plugins.wdg.dev/info.json
+      REMOTE_INFO_PATH: /var/www/html/info.json
+      REMOTE_PLUGINS_DIR: /var/www/html/plugins
+    steps:
+      - name: "Validate Version"
+        run: |
+          set -eu
+          VERSION="${VERSION#v}"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Version must look like X.Y.Z, got '$VERSION'"
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "ZIP_NAME=${PLUGIN_SLUG}-${VERSION}.zip" >> "$GITHUB_ENV"
+
+      - name: "Set Up SSH"
+        run: |
+          set -eu
+          mkdir -p ~/.ssh
+          ssh-keyscan -t rsa ${{ vars.WDGDEV_HOST }} > ~/.ssh/known_hosts
+          echo "${{ secrets.WDGDEV_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: "Check Zip Exists on WDG Dev"
+        run: |
+          set -eu
+          if ! ssh -i ~/.ssh/id_rsa developer@${{ vars.WDGDEV_HOST }} "test -f '${REMOTE_PLUGINS_DIR}/${ZIP_NAME}'"; then
+            echo "::error::${REMOTE_PLUGINS_DIR}/${ZIP_NAME} not found on WDG Dev. Run the Release Zip workflow first."
+            exit 1
+          fi
+
+      - name: "Build info.json"
+        run: |
+          set -eu
+          # Start from the live file so fields like tested, requires_php and
+          # sections carry over. Fall back to a fresh entry if it's missing.
+          if curl -fsSL "$INFO_URL" -o current.json && jq -e 'type == "object"' current.json > /dev/null; then
+            base=$(cat current.json)
+          else
+            echo "::warning::Could not read an object from $INFO_URL, building a new entry."
+            base='{}'
+          fi
+
+          echo "$base" | jq \
+            --arg version "$VERSION" \
+            --arg url "https://plugins.wdg.dev/plugins/${ZIP_NAME}" \
+            '{
+              name: "WDG Support Monitor",
+              slug: "wdg-support-monitor",
+              author: "WDG - The Web Development Group",
+              author_profile: "https://www.webdevelopmentgroup.com"
+            } + . + { version: $version, download_url: $url }' > info.json
+
+          cat info.json
+
+      - name: "Upload info.json to WDG Dev"
+        run: |
+          set -eu
+          # Upload to a temp file and move it into place so sites never read a partial file.
+          scp -i ~/.ssh/id_rsa info.json developer@${{ vars.WDGDEV_HOST }}:"${REMOTE_INFO_PATH}.tmp"
+          ssh -i ~/.ssh/id_rsa developer@${{ vars.WDGDEV_HOST }} "mv '${REMOTE_INFO_PATH}.tmp' '${REMOTE_INFO_PATH}'"
+
+      - name: "Verify"
+        run: |
+          set -eu
+          live=$(curl -fsSL -H 'Cache-Control: no-cache' "$INFO_URL" | jq -r '.version')
+          if [ "$live" != "$VERSION" ]; then
+            echo "::error::$INFO_URL reports version '$live', expected '$VERSION'"
+            exit 1
+          fi
+          echo "$INFO_URL now reports $VERSION"

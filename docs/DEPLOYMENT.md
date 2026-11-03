@@ -20,7 +20,10 @@ GitHub release published (tag vX.Y.Z)
        4. zip as wdg-support-monitor-X.Y.Z.zip               (excludes composer.json, composer.lock, dotfiles)
        5. gh release upload -> attaches the zip to the GitHub release
        6. scp -> developer@$WDGDEV_HOST:/var/www/html/plugins/wdg-support-monitor-X.Y.Z.zip
-  -> plugins.wdg.dev/info.json points sites at the new zip   (manual, see below)
+  -> .github/workflows/update-info-json.yml   (skipped for prereleases)
+       1. confirm the zip exists on WDG Dev
+       2. rewrite info.json with the new version and download_url
+       3. upload to /var/www/html/info.json and check the live URL reports X.Y.Z
   -> sites see the update in wp-admin / wp plugin list
 ```
 
@@ -89,7 +92,7 @@ Composer and MU-plugin installs do not use this path. The `Update URI` header li
 
 5. **Watch the workflow.** `gh run watch` or the Actions tab. When it finishes, the release has a `wdg-support-monitor-X.Y.Z.zip` asset and the same file sits in `/var/www/html/plugins/` on the WDG Dev host.
 
-6. **Update `info.json` on plugins.wdg.dev.** The workflow does not touch it. Add or update the entry so `version` is `X.Y.Z` and `download_url` points at the uploaded zip. Until this happens, no site sees the update.
+6. **Confirm `info.json` updated.** The "Update info.json" job runs after the zip upload and points `https://plugins.wdg.dev/info.json` at the new zip. It keeps any other fields already in the file (such as `tested` or `sections`) and only changes `version` and `download_url`. It is skipped for prereleases; to publish one, or to re-point the file by hand, run the workflow from the Actions tab (or `gh workflow run update-info-json.yml -f version=X.Y.Z`).
 
 7. **Verify.**
    - Download the release zip and check that it contains a single `wdg-support-monitor/` folder, a `vendor/` directory, and a `wdg-support-monitor.php` header with the right version.
@@ -126,7 +129,7 @@ Zip files are gitignored.
 
 WordPress does not downgrade plugins through the update API. To back out a bad release:
 
-1. Remove or correct the bad entry in `info.json` so no more sites pick it up.
+1. Re-point `info.json` at the last good version so no more sites pick up the bad one: `gh workflow run update-info-json.yml -f version=<last good version>`.
 2. Fix forward: revert the change on `master` and cut a new patch release (for example `1.1.4`).
 
 For a single site that needs the old build right away, install the previous zip from its GitHub release manually (`wp plugin install <zip> --force`).
