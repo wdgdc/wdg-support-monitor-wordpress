@@ -382,7 +382,7 @@ final class Monitor {
 	public function info() {
 
 		$data = [
-			'API Endpoint' => $this->get_api_endpoint(),
+			'API Endpoint' => $this->get_api_endpoint() ?? 'Not configured',
 			'API Secret'   => $this->get_api_secret(),
 			'Site URL'     => $this->get_site_url(),
 			'Last Run'     => $this->get_last_run() ? $this->get_last_run()->timestamp : 'Never',

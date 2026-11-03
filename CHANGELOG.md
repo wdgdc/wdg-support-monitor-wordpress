@@ -5,6 +5,7 @@
 ## 1.1.3
 
 - Add optional `wikit_core_version` reporting when Composer metadata shows `wdgdc/wikit-core` is installed.
+- Show `Not configured` for the API endpoint in `wp wdg-support-monitor info` when `WDG_SUPPORT_MONITOR_API_ENDPOINT` isn't set, instead of `null`, which triggered a PHP 8.1+ deprecation notice in WP-CLI's YAML output.
 
 ## 1.1.2
 
