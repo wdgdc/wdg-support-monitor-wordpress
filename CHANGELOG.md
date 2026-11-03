@@ -2,8 +2,15 @@
 
 ## Unreleased
 
-- Add optional `wdg-core-version` reporting when Composer metadata shows `wdgdc/wikit-core` is installed.
-- Add the `wdg_support_monitor_extras` filter so projects can extend or override the `extras` payload before it is sent.
+## 1.1.3
+
+- Add optional `wikit_core_version` reporting when Composer metadata shows `wdgdc/wikit-core` is installed.
+
+## 1.1.2
+
+- Extract version and self-update logic out of the monitor into a dedicated `Core` class.
+- Split zip packaging into its own `zip-plugin` Composer command, separate from `build-plugin`.
+- Fix the release zip workflow filename and add a `.zip-exclude` list for local test builds.
 
 ## 1.1.1
 
@@ -33,7 +40,7 @@
 
 ## 1.0.1
 
-- Allow localhost support endpoints for development and testing.
+- When `WDG_SUPPORT_MONITOR_ALLOW_LOCALHOST` is enabled, treat the configured API endpoint as an external host (via `http_request_host_is_external`), so reports can be sent to a localhost endpoint during testing.
 - Clean up the reporting flow and refresh the initial documentation.
 
 ## 1.0.0

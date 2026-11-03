@@ -32,7 +32,7 @@ Each report includes:
 The default `extras` payload currently includes:
 
 - `php_version`
-- `wdg-core-version` when Composer metadata is available and `wdgdc/wikit-core` is installed
+- `wikit_core_version` when Composer metadata is available and `wdgdc/wikit-core` is installed
 
 ## Installation
 
@@ -116,24 +116,6 @@ Available subcommands:
 
 `info`, `report`, and `update` support `--format=yaml|json|table`. `report` and `update` also support `--pretty=true|false` when using JSON output.
 
-## Extras Filter
-
-Use the `wdg_support_monitor_extras` filter to add or change custom metadata before the report is sent:
-
-```php
-add_filter(
-	'wdg_support_monitor_extras',
-	function ( $extras ) {
-		$extras['environment'] = wp_get_environment_type();
-		$extras['region']      = 'us-east-1';
-
-		return $extras;
-	}
-);
-```
-
-Return a plain associative array. The default extras are provided first, then your filter runs.
-
 ## Update Behavior
 
 Packaged plugin builds include a generated `wdg-support-monitor.php` file with:
@@ -150,6 +132,7 @@ This update flow is intended for the packaged standard plugin install. Composer 
 - The WP-CLI command is registered in `src/index.php`.
 - The monitoring logic lives in `src/Monitor.php`.
 - Keep release notes in `CHANGELOG.md`.
+- See `docs/DEPLOYMENT.md` for the release and deployment process.
 
 ## Changelog
 
