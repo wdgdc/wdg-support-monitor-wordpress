@@ -346,7 +346,31 @@ final class Monitor {
 			$data['php_version'] = PHP_VERSION;
 		}
 
+		$wikit_core_version = $this->get_wikit_core_version();
+
+		if ( ! empty( $wikit_core_version ) ) {
+			$data['wikit_core_version'] = $wikit_core_version;
+		}
+
 		return $data;
+	}
+
+	/**
+	 * Get the installed wdgdc/wikit-core version, if present on this site.
+	 *
+	 * @return string|null - installed version, or null if wikit-core isn't installed
+	 * @access private
+	 */
+	private function get_wikit_core_version() {
+		if ( ! class_exists( '\Composer\InstalledVersions' ) ) {
+			return null;
+		}
+
+		try {
+			return \Composer\InstalledVersions::getVersion( 'wdgdc/wikit-core' );
+		} catch ( \OutOfBoundsException $e ) {
+			return null;
+		}
 	}
 
 	/**
@@ -358,7 +382,7 @@ final class Monitor {
 	public function info() {
 
 		$data = [
-			'API Endpoint' => $this->get_api_endpoint(),
+			'API Endpoint' => $this->get_api_endpoint() ?? 'Not configured',
 			'API Secret'   => $this->get_api_secret(),
 			'Site URL'     => $this->get_site_url(),
 			'Last Run'     => $this->get_last_run() ? $this->get_last_run()->timestamp : 'Never',
