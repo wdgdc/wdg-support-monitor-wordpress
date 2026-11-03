@@ -14,11 +14,15 @@ jobs:
       contents: write
     name: "Release Zip"
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.vars.outputs.version }}
     steps:
       - name: "Environment Variable Setup"
+        id: vars
         run: |
           echo "PLUGIN_SLUG=wdg-support-monitor" >> $GITHUB_ENV
           echo "PRETTY_VERSION=${GITHUB_REF_NAME/v/}" >> $GITHUB_ENV
+          echo "version=${GITHUB_REF_NAME/v/}" >> $GITHUB_OUTPUT
 
       - name: "Checkout"
         uses: actions/checkout@v6
@@ -81,4 +85,12 @@ jobs:
           echo "${{ secrets.WDGDEV_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           scp -i ~/.ssh/id_rsa build/${{ env.PLUGIN_SLUG }}-${{ env.PRETTY_VERSION }}.zip developer@${{ vars.WDGDEV_HOST }}:/var/www/html/plugins/${{ env.PLUGIN_SLUG }}-${{ env.PRETTY_VERSION }}.zip
-       
+
+  update-info-json:
+    name: "Update info.json"
+    needs: build
+    if: ${{ !github.event.release.prerelease }}
+    uses: ./.github/workflows/update-info-json.yml
+    with:
+      version: ${{ needs.build.outputs.version }}
+    secrets: inherit
