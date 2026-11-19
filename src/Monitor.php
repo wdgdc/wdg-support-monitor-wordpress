@@ -263,7 +263,7 @@ final class Monitor {
 	/**
 	 * Compile our addon data
 	 *
-	 * @return array - collection of plugins and status
+	 * @return array - collection of plugins, themes, and status
 	 * @access private
 	 */
 	private function compile_addons() {
@@ -330,7 +330,120 @@ final class Monitor {
 			array_push( $data, $plugin_update_data );
 		}
 
+		foreach ( $this->compile_themes() as $theme ) {
+			array_push( $data, $theme );
+		}
+
 		return $data;
+	}
+
+	/**
+	 * Installed themes, in the same addon shape as plugins.
+	 *
+	 * @return array
+	 * @access private
+	 */
+	private function compile_themes() {
+		$data = [];
+
+		wp_update_themes();
+		$theme_updates = get_site_transient( 'update_themes' );
+		$active        = $this->active_theme_stylesheets();
+
+		foreach ( wp_get_themes() as $theme ) {
+			$stylesheet = $theme->get_stylesheet();
+
+			if ( ! is_string( $stylesheet ) || '' === $stylesheet ) {
+				continue;
+			}
+
+			$name = $theme->get( 'Name' );
+			$version = $theme->get( 'Version' );
+
+			$theme_data              = new \StdClass();
+			$theme_data->name        = $stylesheet;
+			$theme_data->display     = is_string( $name ) && '' !== $name ? $name : $stylesheet;
+			$theme_data->type        = 'theme';
+			$theme_data->current     = is_string( $version ) ? $version : '';
+			$theme_data->recommended = $this->theme_recommended_version( $theme_updates, $stylesheet );
+			$theme_data->active      = ! empty( $active[ $stylesheet ] );
+
+			array_push( $data, $theme_data );
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Stylesheet slugs of the active theme and its parent.
+	 * On multisite, any theme in use on a subsite.
+	 *
+	 * @return array
+	 * @access private
+	 */
+	private function active_theme_stylesheets() {
+		$active = [];
+
+		if ( is_multisite() ) {
+			// number 0 omits the SQL limit so every subsite is included.
+			$site_ids = get_sites(
+				[
+					'fields'  => 'ids',
+					'number'  => 0,
+					'deleted' => 0,
+				]
+			);
+
+			foreach ( $site_ids as $site_id ) {
+				$this->remember_theme_stylesheet( $active, get_blog_option( (int) $site_id, 'stylesheet' ) );
+				$this->remember_theme_stylesheet( $active, get_blog_option( (int) $site_id, 'template' ) );
+			}
+
+			return $active;
+		}
+
+		$this->remember_theme_stylesheet( $active, get_stylesheet() );
+		$this->remember_theme_stylesheet( $active, get_template() );
+
+		return $active;
+	}
+
+	/**
+	 * @param array  $active
+	 * @param mixed  $stylesheet
+	 * @return void
+	 * @access private
+	 */
+	private function remember_theme_stylesheet( array &$active, $stylesheet ) {
+		if ( is_string( $stylesheet ) && '' !== $stylesheet ) {
+			$active[ $stylesheet ] = true;
+		}
+	}
+
+	/**
+	 * Newer version from the update_themes transient, when WordPress has one.
+	 *
+	 * @param object|false $updates
+	 * @param string       $stylesheet
+	 * @return string|null
+	 * @access private
+	 */
+	private function theme_recommended_version( $updates, $stylesheet ) {
+		if ( empty( $updates->response[ $stylesheet ] ) ) {
+			return null;
+		}
+
+		$update = $updates->response[ $stylesheet ];
+
+		if ( is_array( $update ) && ! empty( $update['new_version'] ) ) {
+			return $update['new_version'];
+		}
+
+		if ( is_object( $update ) && ! empty( $update->new_version ) ) {
+			return $update->new_version;
+		}
+
+		return null;
 	}
 
 	/**
