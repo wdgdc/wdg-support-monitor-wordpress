@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.1.4
+
+- Report installed themes in the addons payload with type `theme`: stylesheet slug, Name header, installed version, the available update from the `update_themes` transient, and `active` for the current theme and its parent. On multisite, any theme in use on a subsite also counts as active.
+
 ## 1.1.3
 
 - Add optional `wikit_core_version` reporting when Composer metadata shows `wdgdc/wikit-core` is installed.
