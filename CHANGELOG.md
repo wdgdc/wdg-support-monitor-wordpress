@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Ship `src/Command.php`, `src/Monitor.php`, and `src/index.php` without the executable bit, so updating a site that commits the plugin no longer adds mode changes to its diff.
+
 ## 1.1.4
 
 - Report installed themes in the addons payload with type `theme`: stylesheet slug, Name header, installed version, the available update from the `update_themes` transient, and `active` for the current theme and its parent. On multisite, any theme in use on a subsite also counts as active.
