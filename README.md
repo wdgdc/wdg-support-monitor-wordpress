@@ -25,7 +25,7 @@ Each report includes:
 - a timestamp
 - a request key derived from the site URL, secret, and timestamp
 - WordPress core `current` and `recommended` versions
-- installed standard plugins, MU-plugins, and drop-ins
+- installed standard plugins, MU-plugins, drop-ins, and themes
 - each addon's slug, display name, type, installed version, available update version when present, and active state
 - `extras` data
 
